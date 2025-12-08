@@ -1,7 +1,7 @@
 FROM node:20
 
 # Set working directory
-WORKDIR .
+WORKDIR /app
 
 # Install only what’s needed first: improves caching
 COPY package*.json ./
