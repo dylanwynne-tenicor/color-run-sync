@@ -13,7 +13,7 @@ RUN npm install
 COPY . .
 
 # Build your app (if needed)
-RUN npm run build
+RUN vite build
 
 # Start your server
 CMD ["npm", "start"]
