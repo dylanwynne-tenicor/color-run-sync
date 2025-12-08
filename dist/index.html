@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Material ↔ Variant Mapping</title>
+  <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; background: #f6f6f7; margin: 0; }
+    h1, p, pre { max-width: 800px; }
+    pre { background: #eee; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+    .status { position: fixed; top: 1rem; right: 1rem; padding: 0.75rem 1.25rem; border-radius: 6px; color: white; font-weight: bold; z-index: 1000; background-color: #3734c9; }
+    .saved { background: #008060; }
+    .error { background: #d73a49; }
+    .loading { background: #1a5fb4; }
+  </style>
+  <script type="module" crossorigin src="/assets/index-hVMjCor5.js"></script>
+</head>
+<body>
+  <h1>Material to Variant Mapping</h1>
+
+  <p>Edit the JSON below to map your material codes to Shopify product variants, then click <strong>Save</strong> when ready.</p>
+  <p><strong>Note:</strong> Do <em>not</em> add a comma after the final entry.</p>
+
+  <!-- React mounts everything from here -->
+  <div id="root">
+    <div style="padding: 2rem; text-align: center; color: #666;">Loading…</div>
+  </div>
+  <!-- <script type="module" src="/src/minimal.jsx"></script> -->
+
+  <h2>Finding the Product Variant ID</h2>
+  <p>To locate a Product Variant ID:</p>
+  <ol>
+    <li>Go to Shopify Admin &gt; Products.</li>
+    <li>Select the product you want.</li>
+    <li>Click the specific variant.</li>
+  </ol>
+  <p>The Product Variant ID will appear in the URL. For example, for the <strong>Inventory-Only ODG Kydex</strong> variant, the URL is:</p>
+  <pre>https://admin.shopify.com/store/tenicor/products/7307312627787/variants/41320119304267</pre>
+
+  <p>The Product Variant ID is at the end of the URL. Here, the Product Variant ID is:</p>
+  <pre>41320119304267</pre>
+
+  <h2>Adding the Variant ID to the JSON</h2>
+  <p>Insert this ID into the JSON text field below using the following format:</p>
+  <pre>{
+  "ABC": "gid://shopify/ProductVariant/1234567890",
+  "ODG": "gid://shopify/ProductVariant/41320119304267"
+}</pre>
+
+  <p>Now, <strong>any product variant whose SKU contains "ODG"</strong> will have its inventory quantity automatically synced to match the inventory of <em>Inventory-Only ODG Kydex</em>.</p>
+</body>
+</html>
