@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "prestart": "vite build",
+    "build": "vite build",
     "start": "concurrently \"node server.js\" \"ngrok http 3000 --log=stdout --log-level=info\""
   },
   "dependencies": {
