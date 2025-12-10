@@ -174,6 +174,7 @@ async function syncMaterial(material, canonicalGID, locationGID) {
   }
 
   const dependents = await findVariantsByMaterial(material);
+  console.log(`Found dependents: ${dependents.length()}`)
 
   const dependentItems = dependents
     .filter(v => v.product.title.includes("Color Run")) // extremely important, since other products may contain the string

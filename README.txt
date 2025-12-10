@@ -7,7 +7,7 @@ To register a webhook:
 curl -X POST "https://tenicor.myshopify.com/admin/api/2025-07/webhooks.json" \
   -H "X-Shopify-Access-Token: $(jq -r .access_token shopify_token.json)" \
   -H "Content-Type: application/json" \
-  -d '{"webhook":{"topic":"orders/create","address":"https://inescapable-vinnie-sacrificeable.ngrok-free.dev/webhook/orders/create","format":"json"}}'
+  -d '{"webhook":{"topic":"orders/create","address":"https://color-run-sync-git-128710390300.us-west1.run.app/webhook/orders/create","format":"json"}}'
 
 To delete a webhook:
 
