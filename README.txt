@@ -25,7 +25,7 @@ curl -X DELETE \
   "https://tenicor.myshopify.com/admin/api/2025-07/webhooks/<webhook_id>.json" \
   -H "X-Shopify-Access-Token: $(jq -r .access_token shopify_token.json)"
 
-# FIRST TIME SETUP
+# VERY FIRST TIME SETUP
 
 If this is the first time running the app, a metafield must be created to store material relations information. This is done with the below command.
 
