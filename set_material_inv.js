@@ -42,15 +42,34 @@ export async function getRelations() {
 }
 
 async function findVariantsByMaterial(material) {
-  const q = `sku:*${material}* AND NOT sku:Color-${material}`; // Color-material is the material sku itself
-  const data = await shopifyGraphQL(`
-    query Variants($query: String!) {
-      productVariants(first: 250, query: $query) {
-        nodes { id sku inventoryItem { id } product { title } }
-      }
-    }
-  `, { query: q });
-  return data?.productVariants?.nodes || [];
+  const q = `sku:*${material} AND product_title:*color-run* AND NOT sku:Color-${material}`; // Color-material is the material sku itself
+  
+  let cursor = null;
+  const allNodes = [];
+
+  while (true) {
+    const data = await shopifyGraphQL(`
+      query Variants($query: String!) {
+        productVariants(first: 250, query: $query, after:$cursor) {
+          nodes { id sku inventoryItem { id } product { title } }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }`, { query: q, cursor });
+
+    const connection = data?.productVariants;
+    if (!connection) break;
+
+    allNodes.push(...(connection.nodes || []));
+
+    if (!connection.pageInfo?.hasNextPage) break;
+    cursor = connection.pageInfo.endCursor;
+  }
+
+  console.log(allNodes);
+  return allNodes;
 }
 
 async function getVariantById(variantGid) {
