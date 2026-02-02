@@ -49,7 +49,7 @@ async function findVariantsByMaterial(material) {
 
   while (true) {
     const data = await shopifyGraphQL(`
-      query Variants($query: String!) {
+      query Variants($query: String!, $cursor: String) {
         productVariants(first: 250, query: $query, after:$cursor) {
           nodes { id sku inventoryItem { id } product { title } }
           pageInfo {
