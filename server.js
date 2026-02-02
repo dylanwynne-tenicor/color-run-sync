@@ -125,7 +125,7 @@ app.post("/app/config", async (req, res) => {
 
     // Validate mappings
     for (const [code, gid] of Object.entries(newMap)) {
-      if (!/^[A-Z]{3}$/.test(code) || !gid?.startsWith?.("gid://shopify/ProductVariant/")) {
+      if (!/^[A-Z0-9]{3}$/.test(code) || !gid?.startsWith?.("gid://shopify/ProductVariant/")) {
         return res.status(400).json({ error: "Invalid mapping data" });
       }
     }
