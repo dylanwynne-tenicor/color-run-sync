@@ -46,8 +46,8 @@ const validateInput = (obj) => {
     return 'Top-level JSON must be an object like { "ALU": "gid://shopify/ProductVariant/..." }';
   }
   for (const [code, gid] of Object.entries(obj)) {
-    if (!/^[A-Z]{3}$/.test(code)) {
-      return `Material code "${code}" is invalid. Must be 3 uppercase letters (e.g., ALU).`;
+    if (!/^[A-Z0-9]{3}$/.test(code)) {
+      return `Material code "${code}" is invalid. Must be 3 uppercase letters or digits (e.g., ALU, AL1).`;
     }
     if (typeof gid !== "string" || !gid.startsWith("gid://shopify/ProductVariant/")) {
       return `Invalid variant GID for "${code}": ${gid}`;
