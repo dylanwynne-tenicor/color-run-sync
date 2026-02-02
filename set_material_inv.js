@@ -68,7 +68,6 @@ async function findVariantsByMaterial(material) {
     cursor = connection.pageInfo.endCursor;
   }
 
-  console.log(allNodes);
   return allNodes;
 }
 
