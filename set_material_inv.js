@@ -68,6 +68,7 @@ async function findVariantsByMaterial(material) {
     cursor = connection.pageInfo.endCursor;
   }
 
+  console.log(allNodes[0]);
   return allNodes;
 }
 
@@ -142,8 +143,7 @@ async function bulkAdjust(locationGID, changes) {
     }))
   };
 
-//   console.log("bulkAdjust input:", JSON.stringify(input, null, 2));
-
+  // TODO: Add pagination since the adjustment may include >250 items
   const result = await shopifyGraphQL(`
     mutation Adjust($input: InventoryAdjustQuantitiesInput!) {
       inventoryAdjustQuantities(input: $input) {
@@ -203,7 +203,13 @@ async function syncMaterial(material, canonicalGID, locationGID) {
     return;
   }
 
-  const depLevels = await getInventoryLevelsBulk(LOCATION_ID, dependentItems);
+  const depLevels = [];
+  let iterations = Math.floor((dependentItems.length() + 249) / 250);
+  for (let i = 0; i < iterations; i++) {
+    depLevels.push(await getInventoryLevelsBulk(LOCATION_ID, dependentItems.slice(i*250, (i+1)*250)));
+  }
+
+  // const depLevels = await getInventoryLevelsBulk(LOCATION_ID, dependentItems);
 
   const changes = dependentItems
     .map(id => {
@@ -219,7 +225,12 @@ async function syncMaterial(material, canonicalGID, locationGID) {
   }
 
   console.log(`Applying ${changes.length} inventory adjustments for ${material}`);
-  await bulkAdjust(locationGID, changes);
+
+  iterations = Math.floor((changes.length() + 249) / 250);
+  for (let i = 0; i < iterations; i++) {
+    await bulkAdjust(locationGID, changes.slice(i*250, (i+1)*250));
+  }
+  // await bulkAdjust(locationGID, changes);
 
   console.log(`Material ${material} synced`);
 }
