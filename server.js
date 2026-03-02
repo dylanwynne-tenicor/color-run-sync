@@ -3,9 +3,10 @@ import express from "express";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
-// import { hostname } from "node:os";
-import { saveAccessToken } from "./shopify.js";
+import { saveAccessToken, getAccessToken } from "./shopify.js";
+import { generateState, verifyHmac } from "./oauth.js";
 import { adjustInventoryDelta } from "./decrement_material.js";
 import { syncMaterials, shopifyGraphQL, getRelations } from "./set_material_inv.js";
 
@@ -130,7 +131,7 @@ app.post("/app/config", async (req, res) => {
       }
     }
 
-    // 1️⃣ Get shop ID (required for metafieldsSet)
+    // Get shop ID (required for metafieldsSet)
     const shopResult = await shopifyGraphQL(`
       {
         shop { id }
@@ -143,7 +144,7 @@ app.post("/app/config", async (req, res) => {
       return res.status(500).json({ error: "Unable to determine shop ID" });
     }
 
-    // 2️⃣ Save metafield using metafieldsSet
+    // Save metafield using metafieldsSet
     const mutation = `
       mutation SetMetafields($metafields: [MetafieldsSetInput!]!) {
         metafieldsSet(metafields: $metafields) {
@@ -206,21 +207,55 @@ app.get(["/app", "/apps/*"], (req, res) => {
 /* ---------------------------------------------------------
    OAuth Install
 ----------------------------------------------------------*/
-app.get("/", (req, res) => {
-  // const base = APP_URL || `https://${req.hostname}`;
-  const base = APP_URL;
-  const redirectUri = `${base}/auth/callback`;
+app.get("/install", (req, res) => {
+  const nonce = crypto.randomBytes(16).toString("hex");
 
-  const authUrl = `https://${SHOP}/admin/oauth/authorize?client_id=${CLIENT_ID}&scope=${SCOPES}&redirect_uri=${encodeURIComponent(
-    redirectUri
-  )}`;
+  const signedState = crypto
+    .createHmac("sha256", CLIENT_SECRET)
+    .update(nonce)
+    .digest("hex") + ":" + nonce;
 
-  res.redirect(authUrl);
+  const redirectUri = `${APP_URL}/auth/callback`;
+
+  const installUrl =
+    `https://${SHOP}/admin/oauth/authorize` +
+    `?client_id=${CLIENT_ID}` +
+    `&scope=${SCOPES}` +
+    `&state=${signedState}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+  res.redirect(installUrl);
 });
 
+// app.get("/", (req, res) => {
+//   const base = APP_URL;
+//   const redirectUri = `${base}/auth/callback`;
+
+//   const authUrl = `https://${SHOP}/admin/oauth/authorize?client_id=${CLIENT_ID}&scope=${SCOPES}&redirect_uri=${encodeURComponent(
+//     redirectUri
+//   )}`;
+
+//   res.redirect(authUrl);
+// });
+
 app.get("/auth/callback", async (req, res) => {
-  const { code } = req.query;
-  if (!code) return res.status(400).send("Missing authorization code");
+  const { code, state, shop } = req.query;
+
+  if (shop !== SHOP)
+    return res.status(400).send("Shop mismatch");
+
+  if (!verifyHmac(req.query))
+    return res.status(400).send("HMAC validation failed");
+
+  const [hmacPart, nonce] = state.split(":");
+
+  const expected = crypto
+    .createHmac("sha256", CLIENT_SECRET)
+    .update(nonce)
+    .digest("hex");
+
+  if (hmacPart !== expected)
+    return res.status(400).send("Invalid OAuth state");
 
   try {
     const tokenResponse = await fetch(
@@ -237,16 +272,28 @@ app.get("/auth/callback", async (req, res) => {
     );
 
     const data = await tokenResponse.json();
-    if (!data.access_token) throw new Error("No access token received");
 
-    await saveAccessToken(data.access_token);
-    console.log("Shopify access token saved successfully");
+    if (!data.access_token)
+      throw new Error("No access token returned");
 
-    res.send("<h3>Installation complete! You can close this tab.</h3>");
+    saveAccessToken(data.access_token);
+
+    console.log("✅ Shopify installed successfully");
+
+    res.send(`
+      <h2>App Installed</h2>
+      <p>You can close this tab.</p>
+      <p>The server is now authenticated.</p>
+    `);
   } catch (err) {
-    console.error("OAuth callback error:", err);
-    res.status(500).send("Authentication failed");
+    console.error(err);
+    res.status(500).send("OAuth failed");
   }
+});
+
+app.get("/health", (req, res) => {
+  const tokenExists = !!getAccessToken();
+  res.json({ installed: tokenExists });
 });
 
 /* ---------------------------------------------------------
@@ -300,13 +347,7 @@ syncMaterials();
 ----------------------------------------------------------*/
 const port = PORT || 3000;
 app.listen(port, () => {
-  // const base = APP_URL || `https://${hostname()}:${port}`;
-  const base = APP_URL;
-  
-  const installUrl = `https://${SHOP}/admin/oauth/authorize?client_id=${CLIENT_ID}&scope=${SCOPES}&redirect_uri=${encodeURIComponent(
-    `${base}/auth/callback`
-  )}`;
-
   console.log(`Server running on http://localhost:${port}`);
-  console.log(`Install URL: ${installUrl}`);
+  console.log(`Open this once to install the app:`);
+  console.log(`${APP_URL}/install`);
 });
